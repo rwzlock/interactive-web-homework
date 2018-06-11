@@ -7,6 +7,7 @@ from flask import (
     jsonify,
     request,
     redirect)
+import sys
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -32,6 +33,7 @@ class Bellybutton(db.Model):
     __tablename__ = 'samples_metadata'
 
     id = db.Column(db.Integer, primary_key=True)
+    sampleid = db.Column(db.Integer)
     event = db.Column(db.String) #collection event
     ethnicity = db.Column(db.String)
     gender = db.Column(db.String)
@@ -71,7 +73,8 @@ def setup():
 
 @app.route("/")
 def index():
-    """Return the dasboard hompage"""
+    """Return the dashboard hompage"""
+
     return render_template('index.html')
 
 @app.route("/names")
@@ -79,7 +82,9 @@ def sample_name_data():
     """Return Belly Button collection events"""
 
     # query for the sample names (Wronge Table)
-    names = db.session.query(Bellybutton.event).all()
+    samples_df = pd.read_csv('DataSets/belly_button_biodiversity_samples.csv')
+    samples_dict = samples_df.to_dict()
+    names = [i for i in samples_dict.keys()]
 
     return jsonify(names)
 
@@ -87,23 +92,23 @@ def sample_name_data():
 def otu_data():
     """List of OTU descriptions"""
 
-    otu_df = pd.read_csv("DataSets\belly_button_biodiversity_otu_id.csv", columns=['id', 'description'])
+    otu_df = pd.read_csv('DataSets/belly_button_biodiversity_otu_id.csv')
     # query for the sample names
-    otu_list = otu_df['description'].values.tolist()
+    otu_list = otu_df['lowest_taxonomic_unit_found'].values.tolist()
 
     return jsonify(otu_list)
 
 @app.route('/metadata/<sample>')
-def metadata_sample(event):
+def metadata_sample(sample):
     """MetaData for a given sample"""
-
+    sample_id = sample.lstrip('BB_')
     results = db.session.query(Bellybutton.age,
                                Bellybutton.bbtype,
                                Bellybutton.ethnicity,
                                Bellybutton.gender,
                                Bellybutton.location,
-                               Bellybutton.id).\
-                               filter(Bellybutton.event==event).all()
+                               Bellybutton.sampleid).\
+                               filter(Bellybutton.sampleid==sample_id).all()
 
     age = [result[0] for result in results]
     bbtype = [result[1] for result in results]
@@ -125,13 +130,39 @@ def metadata_sample(event):
     return jsonify(sample_trace)
 
 @app.route('/wfreq/<sample>')
-def wfreq_sample(event):
+def wfreq_sample(sample):
     """Washing Frequency for a given sample"""
-
+    sample_id = sample.lstrip('BB_')
     sample_wfreq = db.session.query(Bellybutton.wfreq).\
-                               filter(Bellybutton.event==event).all()
+                               filter(Bellybutton.sampleid==sample_id).all()
+    wfreq_trace = {
+        "WASHING_FREQUENCY": sample_wfreq,
+        "SAMPLEID": sample_id
+    }                           
 
-    return jsonify(sample_wfreq)
+    return jsonify(wfreq_trace)
+
+@app.route('/samples/<sample>')
+def samples_sample(sample):
+    """List of OTU ids and values for a given sample"""
+    samples_df = pd.read_csv('DataSets/belly_button_biodiversity_samples.csv')
+    sample_col = str(sample)
+    samples = samples_df[sample_col].to_dict
+    otu_ids = []
+    sample_values = []
+
+    for s in range(0, len(samples)):
+        if (samples.values(s) != 0):
+            otu_ids.append(s+1)
+            sample_values.append(samples.values(s))
+
+
+    samples_trace = {
+        "OTU_IDS": otu_ids,
+        "SAMPLE_VALUES": sample_values
+    }                           
+
+    return jsonify(samples_trace)
 
 if __name__ == "__main__":
     app.run()
