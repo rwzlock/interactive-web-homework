@@ -6,23 +6,13 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Belly Button Homepage</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!--<script src="app.js"></script> -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
 </head>
 <body>
     <div id="line"></div>
     <h1>Dashboard Homepage!</h1>
-    <script>
-        var default_url = "/names";
-        // Get new data whenever the dropdown selection changes
-        function getData(route) {
-            console.log(route);
-            Plotly.d3.json(`/${route}`, function(error, data) {
-                console.log("newdata", data);
-                updatePlotly(data);
-            });
-        }
-
-    </script>
+    <script src="app.js" type="text/javascript"></script>
 
     <select id="selDataset" onchange="getData(this.value)">
         <option value="names">Otu ID</option>

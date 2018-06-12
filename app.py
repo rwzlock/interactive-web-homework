@@ -159,7 +159,8 @@ def samples_sample(sample):
 
     samples_trace = {
         "OTU_IDS": otu_ids,
-        "SAMPLE_VALUES": sample_values
+        "SAMPLE_VALUES": sample_values,
+        "type": "line"
     }                           
 
     return jsonify(samples_trace)
