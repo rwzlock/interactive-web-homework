@@ -1,5 +1,4 @@
 # import necessary libraries
-import numpy as np
 import pandas as pd
 from flask import (
     Flask,
@@ -21,7 +20,6 @@ app = Flask(__name__)
 # Database Setup
 #################################################
 
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///db/belly_button_biodiversity.sqlite"
 
 db = SQLAlchemy(app)
@@ -60,7 +58,9 @@ class Bellybutton(db.Model):
         return '<Bellybutton %r>' % (self.id)
 
 #Tables in SQLITE Database - samples, samples_metadata, otu
-
+class Bbsamples(db.Model):
+    __tablename__ = 'samples'
+    db.reflect()
 #################################################
 # Routes
 #################################################
@@ -145,22 +145,34 @@ def wfreq_sample(sample):
 @app.route('/samples/<sample>')
 def samples_sample(sample):
     """List of OTU ids and values for a given sample"""
-    samples_df = pd.read_csv('DataSets/belly_button_biodiversity_samples.csv')
-    sample_col = str(sample)
-    samples = samples_df[sample_col].to_dict
-    otu_ids = []
-    sample_values = []
+#    samples_df = pd.read_csv('DataSets/belly_button_biodiversity_samples.csv')
+#    sample_col = str(sample)
+#    samples = samples_df[sample_col]
+#    otu_ids = []
+#    sample_values = []
 
-    for s in range(0, len(samples)):
-        if (samples.values(s) != 0):
-            otu_ids.append(s+1)
-            sample_values.append(samples.values(s))
+    results = db.session.query(Bbsamples.otu_id, Bbsamples.BB_941).\
+        order_by(Bbsamples.BB_941.desc()).\
+        limit(10).all()
 
+    otu_ids = [str(result[0]) for result in results]
+    sample_values = [int(result[1]) for result in results]
+
+    print(len(otu_ids))
+    print(len(sample_values))
+    print(otu_ids)
+    print(sample_values)
+##    for s in range(0, len(samples)):
+##        if(int(samples[s]) > 0):
+##            otu_ids.append(int(samples_df['otu_id'][s]))
+##            sample_values.append(int(samples[s]))
+##    print(len(otu_ids))
+##    print(len(sample_values))
 
     samples_trace = {
-        "OTU_IDS": otu_ids,
-        "SAMPLE_VALUES": sample_values,
-        "type": "line"
+        "x": otu_ids,
+        "y": sample_values,
+        "type": "bar"
     }                           
 
     return jsonify(samples_trace)
