@@ -23,15 +23,19 @@
             if (error) return console.warn(error);
             var data = [response];
             console.log(data)
-            var layout = { margin: { t: 30, b:100 } }
-            Plotly.plot("bar", data)
+            var layout = { margin: { t: 30, b:100 },
+                           title: "Top 10 Otu IDS by Sample",
+                           xaxis: { title: "Otu ID"},
+                           yaxis: { title: "Value"}            
+            }
+            Plotly.plot("bar", data, layout)
         })
 
         // Update the plot with new data
         function updatePlotly(newdata) {
             var Bar = document.getElementById('bar');
-            Plotly.restyle(Bar, "labels", [newdata.labels])
-            Plotly.restyle(Bar, "values", [newdata.values])
+            Plotly.restyle(Bar, "x", [newdata.x])
+            Plotly.restyle(Bar, "y", [newdata.y])
         }
 
         // Get new data whenever the dropdown selection changes

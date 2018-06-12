@@ -145,11 +145,6 @@ def wfreq_sample(sample):
 @app.route('/samples/<sample>')
 def samples_sample(sample):
     """List of OTU ids and values for a given sample"""
-#    samples_df = pd.read_csv('DataSets/belly_button_biodiversity_samples.csv')
-#    sample_col = str(sample)
-#    samples = samples_df[sample_col]
-#    otu_ids = []
-#    sample_values = []
 
     results = db.session.query(Bbsamples.otu_id, Bbsamples.BB_941).\
         order_by(Bbsamples.BB_941.desc()).\
@@ -162,12 +157,6 @@ def samples_sample(sample):
     print(len(sample_values))
     print(otu_ids)
     print(sample_values)
-##    for s in range(0, len(samples)):
-##        if(int(samples[s]) > 0):
-##            otu_ids.append(int(samples_df['otu_id'][s]))
-##            sample_values.append(int(samples[s]))
-##    print(len(otu_ids))
-##    print(len(sample_values))
 
     samples_trace = {
         "x": otu_ids,
@@ -178,4 +167,4 @@ def samples_sample(sample):
     return jsonify(samples_trace)
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
