@@ -6,7 +6,6 @@ from flask import (
     jsonify,
     request,
     redirect)
-import sys
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -24,9 +23,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///db/belly_button_biodiversity.
 
 db = SQLAlchemy(app)
 
+#Tables in SQLITE Database - samples, samples_metadata, otu
 
-#Bellybutton table containing columns for all the data in the
-#samples_metadata table from the database
+
+#Bellybutton table containing columns for all the data in the samples_metadata table from the database
 class Bellybutton(db.Model):
     __tablename__ = 'samples_metadata'
 
@@ -57,10 +57,15 @@ class Bellybutton(db.Model):
     def __repr__(self):
         return '<Bellybutton %r>' % (self.id)
 
-#Tables in SQLITE Database - samples, samples_metadata, otu
+#Reflect the table with all of the columns corresponding to each Belly Button collection event.
 class Bbsamples(db.Model):
     __tablename__ = 'samples'
     db.reflect()
+#Reflect the third table from the databse. This table is currently unused.
+class Otutable(db.Model):
+    __tablename__ = 'otu'
+    db.reflect()
+
 #################################################
 # Routes
 #################################################
@@ -68,20 +73,19 @@ class Bbsamples(db.Model):
 # Create database tables
 @app.before_first_request
 def setup():
-    # Connect table to our server
+    # Connect the samples_metadata table to our server (the other ones should be created already)
     db.create_all()
 
 @app.route("/")
 def index():
     """Return the dashboard hompage"""
-
     return render_template('index.html')
 
 @app.route("/names")
 def sample_name_data():
     """Return Belly Button collection events"""
 
-    # query for the sample names (Wronge Table)
+    # query for the sample names using the csv instead of the database
     samples_df = pd.read_csv('DataSets/belly_button_biodiversity_samples.csv')
     samples_dict = samples_df.to_dict()
     names = [i for i in samples_dict.keys()]
@@ -102,6 +106,7 @@ def otu_data():
 def metadata_sample(sample):
     """MetaData for a given sample"""
     sample_id = sample.lstrip('BB_')
+    #Query for the metadata for a specific sample from sqlite database
     results = db.session.query(Bellybutton.age,
                                Bellybutton.bbtype,
                                Bellybutton.ethnicity,
@@ -133,6 +138,7 @@ def metadata_sample(sample):
 def wfreq_sample(sample):
     """Washing Frequency for a given sample"""
     sample_id = sample.lstrip('BB_')
+    #Query for the washing frequency of a specific sample
     sample_wfreq = db.session.query(Bellybutton.wfreq).\
                                filter(Bellybutton.sampleid==sample_id).all()
     wfreq_trace = {
@@ -145,19 +151,19 @@ def wfreq_sample(sample):
 @app.route('/samples/<sample>')
 def samples_sample(sample):
     """List of OTU ids and values for a given sample"""
-
+    #Query the second database table for the top ten otu ids present and their corresponding values
     results = db.session.query(Bbsamples.otu_id, Bbsamples.BB_941).\
         order_by(Bbsamples.BB_941.desc()).\
         limit(10).all()
 
-    otu_ids = [str(result[0]) for result in results]
+    otu_ids = [int(result[0]) for result in results]
     sample_values = [int(result[1]) for result in results]
 
     print(len(otu_ids))
     print(len(sample_values))
     print(otu_ids)
     print(sample_values)
-
+    #generate trace for the top 10 results and plot as a histogram (Plotly recognizes the otu_ids as numbers not labels)
     samples_trace = {
         "x": otu_ids,
         "y": sample_values,
@@ -166,5 +172,6 @@ def samples_sample(sample):
 
     return jsonify(samples_trace)
 
+#Run the app. debug=True is essential to be able to rerun the server any time changes are saved to the Python file
 if __name__ == "__main__":
     app.run(debug=True)

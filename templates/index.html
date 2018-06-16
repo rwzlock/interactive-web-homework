@@ -51,7 +51,7 @@
         Plotly.d3.json(names_url, function(error, response) {
             if (error) return console.warn(error);
             var names = [response];
-            for (var i=0;i<names.length-1;i++) {
+            for (var i=0;i<=names.length;i++) {
                 //convert this section to add <option value="samples/BB_XXX"> BB_XXX </option> for each sample name in the dropdown
                 //current error is that I cannot input a value for each specific link into the option tag using createElement, but
                 //I also do not expect a pure text append for string: "<option value="samples/BB_XXX"> BB_XXX </option>" to be able 
